@@ -6,6 +6,26 @@ document.addEventListener('DOMContentLoaded', () => {
   let moveCount = 1;
   let userColor = 'w'; // 유저의 색깔을 흰색으로 초기화
 
+  const evaluateMove = (move) => {
+    let score = 0;
+  
+    // 여기에 움직임 평가 로직 추가
+    // 예: 말을 잡았다면 점수 증가
+    if (move.captured) {
+      switch(move.captured) {
+        case 'p': score += 1; break;
+        case 'r': score += 5; break;
+        case 'n': score += 3; break;
+        case 'b': score += 3; break;
+        case 'q': score += 9; break;
+      }
+    }
+  
+    // 기타 평가 로직 추가...
+  
+    return score;
+  }
+
 // 컴퓨터에서의 랜덤한 움직임을 만들기위한 기능
 const makeRandomMove = () => {
   const possibleMoves = game.moves();
@@ -13,14 +33,26 @@ const makeRandomMove = () => {
   if(game.game_over()){
     alert("Checkmate!");
   }else{
-    const randomIdx = Math.floor(Math.random() * possibleMoves.length);
-    const move = possibleMoves[randomIdx];
-    game.move(move);
+    const scoredMoves = possibleMoves.map(move => {
+      const tempGame = new Chess(game.fen()); 
+      tempGame.move(move);
+      return { move, score: evaluateMove(tempGame.history().pop()) }; 
+    });
+
+    // 최고 점수 찾기
+    const maxScore = Math.max(...scoredMoves.map(move => move.score));
+    const bestMoves = scoredMoves.filter(move => move.score === maxScore);
+
+    // 최고 점수의 움직임 중 무작위로 선택
+    const selectedMove = bestMoves[Math.floor(Math.random() * bestMoves.length)].move;
+
+    game.move(selectedMove);
     board.position(game.fen());
-    recordMove(move, moveCount); // 움직임과 그 숫자를 기록하고 나타내기
+    recordMove(selectedMove, moveCount);
     moveCount++; 
   }
 };
+
 
 // 기록하고 나타내기 위한 기능 움직임을. 움직임 기록 안에서
 const recordMove = (move, count) => {
